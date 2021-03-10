@@ -1,2 +1,4 @@
 # python virtual enviroment folder
 env/
+__pycache__/
+*.py[cod]
