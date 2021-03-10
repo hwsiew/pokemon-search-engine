@@ -53,13 +53,13 @@ class Pokemon():
 		'pokemon_enconter_locations'	: 'pokemon/%s/encounters'
 	}
 
-	def __init__(self, id:str, name:str, types:List[dict], location_area_encounters:List[dict], stats:List[dict]) -> None:
+	def __init__(self, pid:str, name:str, types:List[dict], location_area_encounters:List[dict], stats:List[dict]) -> None:
 		"""
 		Initialize a pokemon instance
 
 		Parameters
 		----------
-		id : str
+		pid : str
 			id of the pokemon
 		name : str
 			name of the pokemon
@@ -75,7 +75,7 @@ class Pokemon():
 		None
 		"""
 
-		self.id 	= id
+		self.id 	= pid
 		self.name 	= name
 		self.types 	= types
 		self.location_area_encounters = location_area_encounters
