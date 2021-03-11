@@ -1,5 +1,6 @@
 import requests
 from typing import List, Dict
+from datetime import datetime, timedelta  
 
 class PokemonError(Exception):
 	"""
@@ -37,6 +38,8 @@ class Pokemon():
 		remote api host 
 	ENDPOINTS : Dict[str,str]
 		supported endpoints to query related to pokemon data
+	raw : dict
+		serializable data of pokemon
 
 	Methods
 	-------
@@ -45,6 +48,9 @@ class Pokemon():
 
 	build_request(endpoint:str, id_or_name:str) -> requests.models.Response
 		constucts and send a remote GET request to query a pokemon by id or name
+
+	serialize() -> dict
+		return serializable data of pokemon	
 	"""
 
 	API_HOST 	= 'https://pokeapi.co/api/v2/'
@@ -53,7 +59,7 @@ class Pokemon():
 		'pokemon_enconter_locations'	: 'pokemon/%s/encounters'
 	}
 
-	def __init__(self, pid:str, name:str, types:List[dict], location_area_encounters:List[dict], stats:List[dict]) -> None:
+	def __init__(self, pid:str, name:str, types:List[dict], location_area_encounters:List[dict], stats:List[dict], ttl:float = None) -> None:
 		"""
 		Initialize a pokemon instance
 
@@ -69,7 +75,9 @@ class Pokemon():
 			area of location to encounter the pokemon
 		stats : List[dict]
 			stats  of the pokemon
-
+		ttl : float = None
+			time to live (timestamp) of the data of pokemon
+			invalidate pokemon data when now > ttl
 		Returns
 		-------
 		None
@@ -80,6 +88,24 @@ class Pokemon():
 		self.types 	= types
 		self.location_area_encounters = location_area_encounters
 		self.stats 	= stats
+		self.ttl	= ttl
+
+		# ttl (time to live) is not available when pokemon is created from remote host query
+		# then set the ttl from now + 7 days
+		if not ttl:
+			now 		= datetime.now()
+			expire 		= now + timedelta(days=7)
+			timestamp 	= datetime.timestamp(expire)
+			self.ttl    = timestamp
+
+		self.raw 	= {
+			'id' 	: pid,
+			'name' 	: name,
+			'types'	: types,
+			'stats' : stats,
+			'location_area_encounters' : location_area_encounters,
+			'ttl'	: self.ttl
+		}
 
 	@classmethod
 	def query(cls, id_or_name:str) -> 'Pokemon':
@@ -111,7 +137,7 @@ class Pokemon():
 		response = cls.build_request( 'pokemon_enconter_locations' , id_or_name )
 		location_area_encounters  	 = response.json()
 
-		pokemon  = cls(data['id'], data['name'], data['types'], location_area_encounters, data['stats'])
+		pokemon  = cls( str(data['id']) , data['name'], data['types'], location_area_encounters, data['stats'])
 
 		return pokemon
 
@@ -216,3 +242,21 @@ class Pokemon():
 	@stats.setter
 	def stats(self, value:List[Dict]) -> None:
 		self.__stats = value
+
+	@property
+	def ttl(self) -> float:
+		return self.__ttl
+
+	@ttl.setter
+	def ttl(self, value:float):
+		self.__ttl = value
+
+	def serialize(self) -> Dict:
+		"""
+		return serializable data of pokemon	
+
+		Returns
+		-------
+		raw : Dict
+		"""
+		return self.raw
